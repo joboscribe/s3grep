@@ -1,4 +1,4 @@
-module s3grep
+module github.com/joboscribe/s3grep
 
 go 1.12
 
