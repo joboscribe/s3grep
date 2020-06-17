@@ -85,7 +85,7 @@ func (tool *toolInstance) fromArgs(args []string) error {
 	flag.Parse()
 
 	if len(flag.Args()) < 4 {
-		return fmt.Errorf("s3grp [-ike] [--ignore-case] [--keep=path] [--regexp=pattern] [pattern] [bucket] [key] [region]")
+		return fmt.Errorf("s3grep [-ike] [--ignore-case] [--keep=path] [--regexp=pattern] [pattern] [bucket] [key] [region]")
 	}
 	tool.regexStrings = append(tool.regexStrings, flag.Arg(0))
 	tool.bucket = flag.Arg(1)
