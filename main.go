@@ -3,9 +3,9 @@ package main
 import (
 	"os"
 
-	"github.com/joboscribe/s3grep/tool"
+	"github.com/joboscribe/s3grep/cli"
 )
 
 func main() {
-	os.Exit(tool.CLI(os.Args[1:]))
+	os.Exit(cli.Run(os.Args[1:]))
 }

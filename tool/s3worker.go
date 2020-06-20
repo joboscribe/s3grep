@@ -13,7 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 )
 
-func newWorker(id int, tool *toolInstance) worker {
+func newWorker(id int, tool *Instance) worker {
 	w := worker{
 		id:       id,
 		work:     make(chan string),
@@ -27,7 +27,7 @@ type worker struct {
 	id       int
 	work     chan string
 	quitChan chan bool
-	tool     *toolInstance
+	tool     *Instance
 }
 
 func (w worker) Start() {
@@ -52,14 +52,14 @@ func (w worker) Start() {
 					}
 				}
 				if tries == attempts {
-					fmt.Fprintln(os.Stderr, "aborting ", key)
+					fmt.Fprintf(os.Stderr, "aborting %s\n", key)
 				}
 				scanner := bufio.NewScanner(bytes.NewBuffer(rawBytes))
 				result := s3Result{key: key}
 				matches := make([]string, 0)
 				for scanner.Scan() {
 					l := scanner.Text()
-					for _, rx := range w.tool.regexps {
+					for _, rx := range w.tool.config.Regexps {
 						if !rx.MatchString(l) {
 							continue
 						}
@@ -70,17 +70,17 @@ func (w worker) Start() {
 					result.err = err
 				}
 				result.success = len(matches) > 0
-				if result.success && len(w.tool.keepDir) > 0 {
-					err := ioutil.WriteFile(filepath.Join(w.tool.keepDir, key), rawBytes, 0644)
+				if result.success && len(w.tool.config.KeepDir) > 0 {
+					err := ioutil.WriteFile(filepath.Join(w.tool.config.KeepDir, key), rawBytes, 0644)
 					if err != nil {
-						fmt.Fprintln(os.Stderr, "could not write file for ", key)
+						fmt.Fprintf(os.Stderr, "could not write file for %s\n", key)
 					}
 				}
 				result.matchLines = matches
 				time.Sleep(10 * time.Second)
 				w.tool.done <- result
 			case <-w.quitChan:
-				fmt.Fprintf(os.Stdout, "worker #%d of %d stopping\n", w.id, w.tool.numWorkers)
+				fmt.Fprintf(os.Stdout, "worker #%d of %d stopping\n", w.id, w.tool.config.NumWorkers)
 				w.tool.stopped <- struct{}{}
 				return
 			}
@@ -93,11 +93,11 @@ func (w worker) getBytes(key string) ([]byte, error) {
 
 	_, err := w.tool.downloader.Download(awsBuffer,
 		&s3.GetObjectInput{
-			Bucket: aws.String(w.tool.bucket),
+			Bucket: aws.String(w.tool.config.Bucket),
 			Key:    aws.String(key),
 		})
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to download %s: %v", key, err)
+		fmt.Fprintf(os.Stderr, "failed to download %s: %v\n", key, err)
 		return awsBuffer.Bytes(), err
 	}
 
