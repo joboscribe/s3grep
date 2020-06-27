@@ -19,17 +19,20 @@ func Parse(args []string) (tool.Instance, error) {
 	const (
 		ciUsage = "Perform case insensitive matching.  By default, s3grep is case sensitive."
 		eUsage  = "Additional `regexp` to match against."
+		nUsage  = "Number of cuncurrent S3 operations to perform (default 10)"
 	)
 	flags.BoolVar(&config.CaseInsensitive, "i", false, ciUsage)
 	flags.BoolVar(&config.CaseInsensitive, "ignore-case", false, ciUsage)
 	flags.StringVar(&config.KeepDir, "k", "", "Relative file path for storing files with matches.")
 	flags.Var(&config.RegexStrings, "e", eUsage)
 	flags.Var(&config.RegexStrings, "regexp", eUsage)
+	flags.IntVar(&config.NumWorkers, "n", 10, nUsage)
+	flags.IntVar(&config.NumWorkers, "num-workers", 10, nUsage)
 
 	flags.Parse(args)
 
 	if len(flags.Args()) < 4 {
-		return ti, fmt.Errorf("s3grep [-ike] [--ignore-case] [--keep=path] [--regexp=pattern] [pattern] [bucket] [key] [region]")
+		return ti, fmt.Errorf("s3grep [-i] [-e pattern] [-k path] [-n num] [--ignore-case] [--keep=path] [--num-workers=num] [--regexp=pattern] [pattern] [bucket] [key] [region]")
 	}
 
 	config.RegexStrings = append(config.RegexStrings, flags.Arg(0))
@@ -51,6 +54,5 @@ func Parse(args []string) (tool.Instance, error) {
 		config.Regexps = append(config.Regexps, rx)
 	}
 	config.Region = flags.Arg(3)
-	config.NumWorkers = 10
 	return tool.NewInstance(config)
 }
