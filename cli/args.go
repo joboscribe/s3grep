@@ -8,11 +8,22 @@ import (
 	"github.com/joboscribe/s3grep/tool"
 )
 
-// Parse will generate a new tool.Instance
-// with the flags and parameters entered
-func Parse(args []string) (tool.Instance, error) {
+// FromArgs takes the command-line parameters
+// and returns a new tool.Instance
+func FromArgs(args []string) (tool.Instance, error) {
 	ti := tool.Instance{}
 
+	config, err := Parse(args)
+	if err != nil {
+		return ti, err
+	}
+
+	return tool.NewInstance(config)
+}
+
+// Parse will generate a new tool.Config
+// with the flags and parameters entered
+func Parse(args []string) (tool.Config, error) {
 	var config = tool.Config{}
 
 	flags := flag.NewFlagSet("s3grep", flag.ContinueOnError)
@@ -32,7 +43,7 @@ func Parse(args []string) (tool.Instance, error) {
 	flags.Parse(args)
 
 	if len(flags.Args()) < 4 {
-		return ti, fmt.Errorf("s3grep [-i] [-e pattern] [-k path] [-n num] [--ignore-case] [--keep=path] [--num-workers=num] [--regexp=pattern] [pattern] [bucket] [key] [region]")
+		return config, fmt.Errorf("s3grep [-i] [-e pattern] [-k path] [-n num] [--ignore-case] [--keep=path] [--num-workers=num] [--regexp=pattern] [pattern] [bucket] [key] [region]")
 	}
 
 	config.RegexStrings = append(config.RegexStrings, flags.Arg(0))
@@ -41,7 +52,7 @@ func Parse(args []string) (tool.Instance, error) {
 	var err error
 	config.KeyRegexp, err = regexp.Compile(keyStr)
 	if err != nil {
-		return ti, fmt.Errorf("could not parse key pattern: %v", err)
+		return config, fmt.Errorf("could not parse key pattern: %v", err)
 	}
 	for i, rStr := range config.RegexStrings {
 		if config.CaseInsensitive {
@@ -49,10 +60,10 @@ func Parse(args []string) (tool.Instance, error) {
 		}
 		rx, err := regexp.Compile(rStr)
 		if err != nil {
-			return ti, fmt.Errorf("could not parse pattern %s: %v", config.RegexStrings[i], err)
+			return config, fmt.Errorf("could not parse pattern %s: %v", config.RegexStrings[i], err)
 		}
 		config.Regexps = append(config.Regexps, rx)
 	}
 	config.Region = flags.Arg(3)
-	return tool.NewInstance(config)
+	return config, nil
 }

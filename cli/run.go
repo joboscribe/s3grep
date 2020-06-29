@@ -11,7 +11,7 @@ import (
 // any errors that occurred and, if any,
 // any matches found
 func Run(args []string) int {
-	toolInstance, err := Parse(args)
+	toolInstance, err := FromArgs(args)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return 2
